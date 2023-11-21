@@ -1,0 +1,23 @@
+{
+  "name": "shopserver",
+  "version": "1.0.0",
+  "description": "API para angular ecommerce project",
+  "main": "index.js",
+  "scripts": {
+    "test": "test",
+    "start": "nodemon ."
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  },
+  "dependencies": {
+    "@types/mongoose": "^5.11.97",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "image-size": "^1.0.2",
+    "mongoose": "^8.0.1"
+  }
+}
