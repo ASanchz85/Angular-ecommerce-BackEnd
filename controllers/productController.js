@@ -1,6 +1,23 @@
-const { response } = require("express");
 const Product = require("../models/Product");
 const base64ToImage = require("image-size");
+
+exports.getAllProducts = async (req, res) => {
+  try {
+    const products = await Product.find();
+    res.json(products);
+  } catch (error) {
+    console.warn(
+      "Something went wrong while fetching all products from database ->",
+      error
+    );
+    res
+      .status(500)
+      .send(
+        error.message ||
+          "Something went wrong when trying to fetch all products"
+      );
+  }
+};
 
 exports.createProduct = async (req, res) => {
   try {
@@ -30,6 +47,21 @@ exports.createProduct = async (req, res) => {
       .send(
         error.message || "Something went wrong when trying to add a new product"
       );
+  }
+};
+
+exports.updateProduct = async (req, res) => {
+  try {
+    const query = await Product.uptateOne(
+      { _id: req.params.id },
+      req.body
+    ).exec();
+
+    if (query.matchedCount === 0) throw new Error();
+
+    res.json(query);
+  } catch (error) {
+    res.status(404).json({ msg: "The product does not exist" });
   }
 };
 
@@ -66,7 +98,7 @@ function getMimeType(url) {
       return contentType;
     })
     .catch((err) => {
-      console.log('fetch error: ', err);
+      console.warn("fetch error: ", err);
       throw err;
     });
 }
