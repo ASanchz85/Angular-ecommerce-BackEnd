@@ -52,16 +52,30 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const query = await Product.uptateOne(
+    const query = await Product.updateOne(
       { _id: req.params.id },
       req.body
     ).exec();
 
-    if (query.matchedCount === 0) throw new Error();
+    if (query.matchedCount === 0) res.status(404);
 
     res.json(query);
   } catch (error) {
-    res.status(404).json({ msg: "The product does not exist" });
+    console.log("Problem while updating -> ", error);
+    res.status(500).json({ msg: "The product does not exist" });
+  }
+};
+
+exports.deleteProduct = async (req, res) => {
+  try {
+    const query = await Product.deleteOne({ _id: req.params.id });
+
+    if (query.matchedCount === 0) res.status(404);
+
+    res.status(202).json(query);
+  } catch (error) {
+    console.log("Problem while deleting -> ", error);
+    res.status(500).json({ msg: "The product does not exist" });
   }
 };
 
