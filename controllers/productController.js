@@ -1,9 +1,16 @@
 const Product = require("../models/Product");
-const base64ToImage = require("image-size");
+const imgLogic = require("../utils/imgLogic");
 
 exports.getAllProducts = async (req, res) => {
   try {
     const products = await Product.find();
+
+    products.forEach((element) => {
+      if (element.image.startsWith("img"))
+        element.image = `http://localhost:3000/img/${element.image}`
+        //element.image = imgLogic.loadImageFile(element);
+    });
+
     res.json(products);
   } catch (error) {
     console.warn(
@@ -21,26 +28,11 @@ exports.getAllProducts = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
-    let product;
+    let product = new Product(req.body);
+    product.image = await imgLogic.manageImage(req);
 
-    if (req.body.isImgFile) {
-      validateImage(req.body.image);
-      console.log("Image has been successfully validated");
-    } else {
-      await getMimeType(req.body.image)
-        .then((res) => {
-          console.log("MimeType: ", res);
-          validateMimeType(res);
-        })
-        .catch((err) => {
-          throw err;
-        });
-    }
-
-    product = new Product(req.body);
     await product.save();
-
-    res.send(product);
+    res.json({ msg: "The product was successfully added" });
   } catch (error) {
     res
       .status(500)
@@ -52,72 +44,43 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    const query = await Product.updateOne(
+    req.body.image = await imgLogic.manageImage(req);
+
+    const query = await Product.findOneAndUpdate(
+      { _id: req.params.id },
+      req.body
+    );
+
+    //?? otra forma de actuazliar vía mongoose:
+    /*const query = await Product.updateOne(
       { _id: req.params.id },
       req.body
     ).exec();
 
-    if (query.matchedCount === 0) res.status(404);
+    if (query.matchedCount === 0) res.status(404);*/
 
-    res.json(query);
+    if (!query) res.status(404).json({ msg: "The product does not exist" });
+    else {
+      imgLogic.deleteImage(query.image);
+      res.status(202).json(query);
+    }
   } catch (error) {
     console.log("Problem while updating -> ", error);
-    res.status(500).json({ msg: "The product does not exist" });
+    res.status(500).send("Internal server error while updating");
   }
 };
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const query = await Product.deleteOne({ _id: req.params.id });
+    const query = await Product.findOneAndDelete({ _id: req.params.id });
 
-    if (query.matchedCount === 0) res.status(404);
-
-    res.status(202).json(query);
+    if (!query) res.status(404).json({ msg: "The product does not exist" });
+    else {
+      imgLogic.deleteImage(query.image);
+      res.status(202).json(query);
+    }
   } catch (error) {
     console.log("Problem while deleting -> ", error);
-    res.status(500).json({ msg: "The product does not exist" });
+    res.status(500).send("Internal server error while deleting");
   }
 };
-
-function validateImage(base64String) {
-  try {
-    if (!base64String.startsWith("data:image/")) {
-      throw new Error("Image format is not allowed");
-    }
-
-    const buffer = Buffer.from(base64String.split(",")[1], "base64");
-    const dimensions = base64ToImage(buffer);
-
-    if (dimensions.width !== dimensions.height) {
-      throw new Error("Image is not a square");
-    }
-    if (dimensions.width < 400 || dimensions.height < 400) {
-      throw new Error("Image size is too small");
-    }
-  } catch (error) {
-    console.warn("error to validate, due to ", error);
-    throw error;
-  }
-}
-
-function getMimeType(url) {
-  return fetch(url)
-    .then((res) => {
-      if (!res.ok)
-        throw new Error("Problem while fetching image url, ", res.status);
-
-      const contentType = res.headers.get("Content-Type");
-      if (!contentType) throw new Error("No Content-Type availabe");
-
-      return contentType;
-    })
-    .catch((err) => {
-      console.warn("fetch error: ", err);
-      throw err;
-    });
-}
-
-function validateMimeType(mime) {
-  if (!mime.startsWith("image"))
-    throw new Error("The Url provided is not an image");
-}
