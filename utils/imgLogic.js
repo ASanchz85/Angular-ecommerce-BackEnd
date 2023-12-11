@@ -27,7 +27,7 @@ function validateImage(base64String) {
   }
 }
 
-function getMimeType(url) {
+async function getMimeType(url) {
   return fetch(url)
     .then((res) => {
       if (!res.ok)
