@@ -56,7 +56,7 @@ async function findUserByEmail(req, res) {
   try {
     const query = await coll.findOne(
       { email: req.body.email },
-      { projection: { _id: 0, email: 0 } }
+      { projection: { _id: 0 } }
     );
 
     if (query && query.password === req.body.password)
@@ -89,7 +89,7 @@ async function findUserByName(req, res) {
   try {
     const query = await coll.findOne(
       { username: req.body.username },
-      { projection: { _id: 0, username: 0 } }
+      { projection: { _id: 0 } }
     );
 
     if (query && query.password === req.body.password)

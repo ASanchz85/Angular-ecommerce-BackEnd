@@ -9,8 +9,12 @@ require("dotenv").config();
 const app = express();
 const PORT = process.env.PORT || 4000;
 
-app.use(morgan("tiny"));
-app.use(cors());
+app.use(morgan("dev"));
+app.use(
+  cors({
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: "2mb" }));
 app.use("/api/products", require("./routes/product.routes"));
 app.use("/api/auth", require("./routes/user.routes"));

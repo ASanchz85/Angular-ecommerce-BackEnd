@@ -1,5 +1,6 @@
 const Product = require("../models/Product");
 const imgLogic = require("../utils/imgLogic");
+const authLogic = require("../utils/authLogic");
 
 exports.getAllProducts = async (req, res) => {
   try {
@@ -7,8 +8,8 @@ exports.getAllProducts = async (req, res) => {
 
     products.forEach((element) => {
       if (element.image.startsWith("img"))
-        element.image = `http://localhost:3000/img/${element.image}`
-        //element.image = imgLogic.loadImageFile(element);
+        element.image = `http://localhost:3000/img/${element.image}`;
+      //element.image = imgLogic.loadImageFile(element);
     });
 
     res.json(products);
@@ -28,11 +29,19 @@ exports.getAllProducts = async (req, res) => {
 
 exports.createProduct = async (req, res) => {
   try {
-    let product = new Product(req.body);
-    product.image = await imgLogic.manageImage(req);
+    if (await authLogic.checkRBAC(req, ["Admin", "Employee"])) {
+      let product = new Product(req.body);
+      product.image = await imgLogic.manageImage(req);
 
-    await product.save();
-    res.json({ msg: "The product was successfully added" });
+      await product.save();
+
+      res.status(201).json({ msg: "The product was successfully added" });
+    } else {
+      res
+        .status(403)
+        .json({ msg: "The product could not be added due to permissions" });
+      throw new Error();
+    }
   } catch (error) {
     res
       .status(500)
@@ -44,25 +53,34 @@ exports.createProduct = async (req, res) => {
 
 exports.updateProduct = async (req, res) => {
   try {
-    req.body.image = await imgLogic.manageImage(req);
+    if (await authLogic.checkRBAC(req, ["Admin", "Employee"])) {
+      req.body.image = await imgLogic.manageImage(req);
 
-    const query = await Product.findOneAndUpdate(
+      const query = await Product.findOneAndUpdate(
+        { _id: req.params.id },
+        req.body
+      );
+
+      //?? otra forma de actuazliar vía mongoose:
+      /*const query = await Product.updateOne(
       { _id: req.params.id },
       req.body
-    );
+      ).exec();
+      
+      if (query.matchedCount === 0) res.status(404);*/
 
-    //?? otra forma de actuazliar vía mongoose:
-    /*const query = await Product.updateOne(
-      { _id: req.params.id },
-      req.body
-    ).exec();
-
-    if (query.matchedCount === 0) res.status(404);*/
-
-    if (!query) res.status(404).json({ msg: "The product does not exist" });
-    else {
-      imgLogic.deleteImage(query.image);
-      res.status(202).json(query);
+      if (!query) res.status(404).json({ msg: "The product does not exist" });
+      else {
+        imgLogic.deleteImage(query.image);
+        res
+          .status(202)
+          .json({ msg: "The product was successfully updated" }, query);
+      }
+    } else {
+      res
+        .status(403)
+        .json({ msg: "The product could not be updated due to permissions" });
+      throw new Error();
     }
   } catch (error) {
     console.log("Problem while updating -> ", error);
@@ -72,12 +90,19 @@ exports.updateProduct = async (req, res) => {
 
 exports.deleteProduct = async (req, res) => {
   try {
-    const query = await Product.findOneAndDelete({ _id: req.params.id });
+    if (await authLogic.checkRBAC(req, ["Admin", "Employee"])) {
+      const query = await Product.findOneAndDelete({ _id: req.params.id });
 
-    if (!query) res.status(404).json({ msg: "The product does not exist" });
-    else {
-      imgLogic.deleteImage(query.image);
-      res.status(202).json(query);
+      if (!query) res.status(404).json({ msg: "The product does not exist" });
+      else {
+        imgLogic.deleteImage(query.image);
+        res.status(202).json({ msg: "The product was successfully updated" }, query);
+      }
+    } else {
+      res
+        .status(403)
+        .json({ msg: "The product could not be deleted due to permissions" });
+      throw new Error();
     }
   } catch (error) {
     console.log("Problem while deleting -> ", error);
