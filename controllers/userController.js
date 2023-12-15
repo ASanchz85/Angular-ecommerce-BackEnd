@@ -1,7 +1,5 @@
 const run = require("../config/mongodb");
 
-//TODO create a new index for username and adapt the logic for that
-
 async function createUser(req, res) {
   const { coll, client } = run("shop", "Users");
 

@@ -94,10 +94,14 @@ async function manageImage(req) {
       .then((res) => {
         console.log("MimeType: ", res);
         validateMimeType(res);
+        if (!res.startsWith('image'))
+          throw new Error('The URL provided is not correct')
       })
       .catch((err) => {
         throw err;
       });
+
+      return req.body.image
   }
 }
 

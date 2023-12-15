@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 4000;
 app.use(morgan("dev"));
 app.use(
   cors({
+    origin: 'http://localhost:4200',
     credentials: true,
   })
 );

@@ -4,7 +4,7 @@ const controllers = require("../controllers/userController");
 
 router.get("/email", controllers.findUserByEmail);
 router.post("/login", controllers.findUserByName);
-router.post("/", controllers.createUser);
+router.post("/new", controllers.createUser);
 
 
 module.exports = router;
